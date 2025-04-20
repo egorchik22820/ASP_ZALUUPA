@@ -1,4 +1,10 @@
+using ASP_ZALUUPA.Domain;
+using ASP_ZALUUPA.Domain.Repositories.Abstract;
+using ASP_ZALUUPA.Domain.Repositories.EntityFramework;
 using ASP_ZALUUPA.infrastructure;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace ASP_ZALUUPA
 {
@@ -18,6 +24,36 @@ namespace ASP_ZALUUPA
             IConfiguration configuration = configBuild.Build();
             AppConfig appConfig = configuration.GetSection("Project").Get<AppConfig>()!;
 
+            // подключаем контекст БД
+            builder.Services.AddDbContext<AppDbContext>(x => x.UseSqlServer(appConfig.Database.ConnectionString)
+                // на момент создания приложения в данной версии EF был баг, хотя ошибки нет, поэтому подавляем предупреждения
+                .ConfigureWarnings(warnings => warnings.Ignore(RelationalEventId.PendingModelChangesWarning)));
+
+            builder.Services.AddTransient<IServiceCategoriesRepository, EFServiceCategoriesRepository>();
+            builder.Services.AddTransient<IServicesRepository, EFServicesRepository>();
+            builder.Services.AddTransient<DataManager>();
+
+            // настраиваем Identity систему
+            builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
+            {
+                options.User.RequireUniqueEmail = true;
+                options.Password.RequiredLength = 6;
+                options.Password.RequireNonAlphanumeric = false;
+                options.Password.RequireLowercase = false;
+                options.Password.RequireUppercase = false;
+                options.Password.RequireDigit = false;
+            }).AddEntityFrameworkStores<AppDbContext>().AddDefaultTokenProviders();
+
+            // настраиваем Auth Cookie
+            builder.Services.ConfigureApplicationCookie(options =>
+            {
+                options.Cookie.Name = "myCompanyAuth";
+                options.Cookie.HttpOnly = true;
+                options.LoginPath = "/account/login";
+                options.AccessDeniedPath = "/admin/accessdenied";
+                options.SlidingExpiration = true;
+            });
+
             // подключаем функционал контроллеров
             builder.Services.AddControllersWithViews();
 
@@ -30,15 +66,14 @@ namespace ASP_ZALUUPA
             // подключаем систему маршрутизации
             app.UseRouting();
 
+            // подключаем аутентификацию и авторизацию
+            app.UseCookiePolicy();
+            app.UseAuthentication();
+            app.UseAuthorization();
+
             // регистрируем нужные нам маршруты
 
             app.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
-
-            //app.MapDefaultControllerRoute();
-            //app.MapControllerRoute(
-            //    name: "default",
-            //    pattern: "{controller=Home}/{action=Index}/{id?}"
-            //);
 
 
 
