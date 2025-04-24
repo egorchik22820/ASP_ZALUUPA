@@ -1,6 +1,7 @@
 ﻿using ASP_ZALUUPA.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 
 namespace ASP_ZALUUPA.Controllers.Admin
 {
@@ -8,10 +9,12 @@ namespace ASP_ZALUUPA.Controllers.Admin
     public partial class AdminController : Controller
     {
         private readonly DataManager? _dataManager;
+        private readonly IWebHostEnvironment _hostingEnvironment;
 
-        public AdminController(DataManager? dataManager)
+        public AdminController(DataManager? dataManager, IWebHostEnvironment hostingEnvironment)
         {
             _dataManager = dataManager;
+            _hostingEnvironment = hostingEnvironment;
         }
 
         public async Task<ActionResult> Index()
@@ -23,6 +26,25 @@ namespace ASP_ZALUUPA.Controllers.Admin
                 return View();
             }
             return View();
+        }
+
+        // сохраняем картинку в файловую систему
+        public async Task<string> SaveImg(IFormFile img)
+        {
+            string path = Path.Combine(_hostingEnvironment.WebRootPath, "img/", img.FileName);
+            await using FileStream stream = new FileStream(path, FileMode.Create);
+            await img.CopyToAsync(stream);
+
+            return path;
+        }
+
+        // сохраняем картинку из редактора
+        public async Task<string> SaveEditorImg()
+        {
+            IFormFile img = Request.Form.Files[0];
+            await SaveImg(img);
+
+            return JsonSerializer.Serialize(new {location = Path.Combine("/img/", img.FileName)});
         }
     }
 }
