@@ -22,6 +22,7 @@ namespace ASP_ZALUUPA.Controllers.Admin
                 return View(entity);
 
             await _dataManager!.ServiceCategories.SaveServiceCategoryAsync(entity);
+            _logger.LogInformation($"добавлена/обновлена категория услуги с ID {entity.Id}");
 
             return RedirectToAction("Index");
         }
@@ -32,6 +33,7 @@ namespace ASP_ZALUUPA.Controllers.Admin
             // в целях безопасности каскадное удаление отключено,
             // поэтому убедитесь, что с удаляемой категорией нет связанных услуг
             await _dataManager!.ServiceCategories.DeleteServiceCategoryAsync(id);
+            _logger.LogInformation($"удалена категория услуги с ID {id}");
 
             return RedirectToAction("Index");
         }

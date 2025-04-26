@@ -5,6 +5,7 @@ using ASP_ZALUUPA.infrastructure;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Serilog;
 
 namespace ASP_ZALUUPA
 {
@@ -57,8 +58,17 @@ namespace ASP_ZALUUPA
             // подключаем функционал контроллеров
             builder.Services.AddControllersWithViews();
 
+            builder.Host.UseSerilog((context, configuration) => configuration.ReadFrom.Configuration(context.Configuration));
+
             // собираем конфигурацию
             WebApplication app = builder.Build();
+
+            // используем логирование
+            app.UseSerilogRequestLogging();
+
+            // обработка исключений
+            if (app.Environment.IsDevelopment())
+                app.UseDeveloperExceptionPage();
 
             // подключаем использование стачиных файлов (css, js, любых)
             app.UseStaticFiles();

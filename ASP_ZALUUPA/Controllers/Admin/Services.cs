@@ -29,6 +29,7 @@ namespace ASP_ZALUUPA.Controllers.Admin
             }
 
             await _dataManager!.Services.SaveServiceAsync(entity);
+            _logger.LogInformation($"добавлена/обновлена услуга с ID {entity.Id}");
             return RedirectToAction("Index");
         }
 
@@ -36,6 +37,7 @@ namespace ASP_ZALUUPA.Controllers.Admin
         public async Task<IActionResult> ServicesDelete(int id)
         {
             await _dataManager!.Services.DeleteServiceAsync(id);
+            _logger.LogInformation($"удалена услуга с ID {id}");
             return RedirectToAction("Index");
         }
     }
